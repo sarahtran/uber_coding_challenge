@@ -1,0 +1,47 @@
+{% extends "bike_parkings/base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-6 col-md-offset-3">
+      <div class="panel panel-default mvm">
+        <div class="panel-heading">
+          <h1 class="panel-title text-center">Start Address</h1>
+        </div>
+        <div class="panel-body">
+          <p class="text-center">{{ directions.src_address }}</p>
+        </div>
+      </div>
+      <div class="panel panel-info mvm">
+        <div class="panel-heading">
+          <h1 class="panel-title text-center">Directions</h1>
+        </div>
+        <ul class="list-group">
+          {% for step in directions.steps %}
+          <li class="list-group-item">
+            <div class="text-center">
+              <p>{{ step.instruction|safe }}</p>
+              <p><strong>Distance:</strong> {{ step.distance }}</p>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="panel panel-default mvm">
+        <div class="panel-heading">
+          <h1 class="panel-title text-center">End Address</h1>
+        </div>
+        <div class="panel-body">
+          <div class="text-center">
+            <p>{{ directions.dst_address }}</p>
+            <h5><strong>Total Distance:</strong> {{ directions.distance }}</h5>
+          </div>
+        </div>
+      </div>
+      <div class="text-center">
+        <a href="{% url 'bike_parkings:index' %}" class="btn btn-info btn-lg">Find Bike Parking Locations</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
