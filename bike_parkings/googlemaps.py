@@ -16,21 +16,41 @@ Fields:
 * status    - 'OK' if geographical coordinates are available, else 'ERROR'
 """
 class GeographicalCoordinates:
-  def __init__(self, address):
-    self.address   = address
-    self.latitude  = 0.0
-    self.longitude = 0.0
-    self.status    = 'ERROR'
-    self.get_geographical_coordinates(address)
+  _address   = ''
+  _latitude  = 0.0
+  _longitude = 0.0
+  _status    = 'ERROR'
 
-  def get_geographical_coordinates(self, address):
-    resp, content = self.request_geographical_coordinates_from_google(address)
-    self.set_status(resp, content)
+  def __init__(self, address):
+    self._get_geographical_coordinates(address)
+
+  @property
+  def address(self):
+    return self._address
+
+  @property
+  def latitude(self):
+    return self._latitude
+
+  @property
+  def longitude(self):
+    return self._longitude
+
+  @property
+  def status(self):
+    return self._status
+
+  def to_JSON(self):
+    return self.__dict__
+
+  def _get_geographical_coordinates(self, address):
+    resp, content = self._request_geographical_coordinates_from_google(address)
+    self._set_status(resp, content)
   
-    if self.status == 'OK':
-      self.set_geographical_coordinates(content)
+    if self._status == 'OK':
+      self._set_geographical_coordinates(content)
   
-  def request_geographical_coordinates_from_google(self, address):
+  def _request_geographical_coordinates_from_google(self, address):
     http = Http()
     url = 'https://maps.googleapis.com/maps/api/geocode/json?'
     san_francisco_bounds = "37.6933354,-123.1077733|37.9297707,-122.3279149"
@@ -43,15 +63,15 @@ class GeographicalCoordinates:
     resp, content = http.request(url + data, "GET")
     return resp, content
 
-  def set_status(self, response, content):
-    self.status = 'OK' if response['status'] == '200' and loads(content)['status'] == 'OK' else 'ERROR'
+  def _set_status(self, response, content):
+    self._status = 'OK' if response['status'] == '200' and loads(content)['status'] == 'OK' else 'ERROR'
   
-  def set_geographical_coordinates(self, content):
+  def _set_geographical_coordinates(self, content):
     result = loads(content)['results'][0]
-    self.address = result['formatted_address']
+    self._address = result['formatted_address']
     location = result['geometry']['location']
-    self.latitude  = location['lat']
-    self.longitude = location['lng']
+    self._latitude  = location['lat']
+    self._longitude = location['lng']
 
 """
 This class represents a step in the directions
@@ -61,9 +81,23 @@ Parameters/Fields:
 * distance    - distance of the step in miles
 """
 class Step:
+  _instruction = ''
+  _distance = ''
+
   def __init__(self, instruction, distance):
-    self.instruction = instruction
-    self.distance = distance
+    self._instruction = instruction
+    self._distance = distance
+
+  @property
+  def instruction(self):
+    return self._instruction
+
+  @property
+  def distance(self):
+    return self._distance
+
+  def to_JSON(self):
+    return self.__dict__
 
 """
 An instance of this class takes in source geographical coordinates and
@@ -82,22 +116,46 @@ Fields:
 * status      - 'OK' if geographical coordinates are available, else 'ERROR'
 """
 class Directions:
+  _src_address = ''
+  _dst_address = ''
+  _distance = ''
+  _steps = []
+  _status = 'ERROR'
+
   def __init__(self, src_geo_coords, dst_geo_coords):
-    self.src_address = ''
-    self.dst_address = ''
-    self.distance = ''
-    self.steps = []
-    self.status = 'ERROR'
-    self.get_directions(src_geo_coords, dst_geo_coords)
+    self._get_directions(src_geo_coords, dst_geo_coords)
 
-  def get_directions(self, src_geo_coords, dst_geo_coords):
-    resp, content = self.request_directions_from_google(src_geo_coords, dst_geo_coords)
-    self.set_status(resp, content)
+  @property
+  def src_address(self):
+    return self._src_address
+
+  @property
+  def dst_address(self):
+    return self._dst_address
+
+  @property
+  def distance(self):
+    return self._distance
+
+  @property
+  def steps(self):
+    return self._steps
+
+  @property
+  def status(self):
+    return self._status
+
+  def to_JSON(self):
+    return self.__dict__
+
+  def _get_directions(self, src_geo_coords, dst_geo_coords):
+    resp, content = self._request_directions_from_google(src_geo_coords, dst_geo_coords)
+    self._set_status(resp, content)
   
-    if self.status == 'OK':
-      self.set_directions(content)
+    if self._status == 'OK':
+      self._set_directions(content)
 
-  def request_directions_from_google(self, src_geo_coords, dst_geo_coords):
+  def _request_directions_from_google(self, src_geo_coords, dst_geo_coords):
     http = Http()
     url = 'https://maps.googleapis.com/maps/api/directions/json?'
     data = urlencode({
@@ -110,15 +168,13 @@ class Directions:
     resp, content = http.request(url + data, "GET")
     return resp, content
   
-  def set_status(self, response, content):
-    self.status = 'OK' if response['status'] == '200' and loads(content)['status'] == 'OK' else 'ERROR'
+  def _set_status(self, response, content):
+    self._status = 'OK' if response['status'] == '200' and loads(content)['status'] == 'OK' else 'ERROR'
 
-  def set_directions(self, content):
+  def _set_directions(self, content):
     route = loads(content)['routes'][0]['legs'][0]
 
-    self.src_address = route['start_address']
-    self.dst_address = route['end_address']
-    self.distance = route['distance']['text']
-
-    for step in route['steps']:
-      self.steps.append(Step(step['html_instructions'], step['distance']['text']))
+    self._src_address = route['start_address']
+    self._dst_address = route['end_address']
+    self._distance = route['distance']['text']
+    self._steps = [Step(step['html_instructions'], step['distance']['text']) for step in route['steps']]
